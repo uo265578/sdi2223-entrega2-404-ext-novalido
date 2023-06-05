@@ -1,0 +1,151 @@
+<div id="widget-offers">
+    <h1>Chats de ofertas propias</h1>
+    <table class="table table-hover">
+        <thead>
+        <tr>
+            <th>Ofertante</th>
+            <th>Oferta</th>
+            <th>Interesado</th>
+            <th>Mensajes sin leer</th>
+            <th>Reanudar</th>
+            <th>Borrar chat</th>
+        </tr>
+        </thead>
+        <tbody id="chatsAsOwnerTable"></tbody>
+    </table>
+    <h1>Chats de ofertas de otros usuarios</h1>
+    <table class="table table-hover">
+        <thead>
+        <tr>
+            <th>Ofertante</th>
+            <th>Oferta</th>
+            <th>Interesado</th>
+            <th>Mensajes sin leer</th>
+            <th>Reanudar</th>
+        </tr>
+        </thead>
+        <tbody id="chatsAsBuyerTable"></tbody>
+    </table>
+</div>
+
+<style>
+    td {
+        text-align: left;
+    }
+</style>
+
+<script>
+    window.history.pushState("", "", "/apiclient/client.html?w=chats");
+
+    let chatsAsOwner;
+    let chatsAsBuyer;
+
+    function loadChats() {
+        $.ajax({
+            url: URLbase + "/chats",
+            type: "GET",
+            data: {},
+            dataType: 'json',
+            headers: {"token": token},
+            success: function (response) {
+                chatsAsOwner = response.chatsAsOwner;
+                chatsAsBuyer = response.chatsAsBuyer;
+                updateChatsTable();
+            },
+            error: function (error) {
+                $("#main-container").load("widget-login.html");
+            }
+        });
+    }
+
+    function updateChatsTable() {
+        $("#chatsAsOwnerTable").empty();
+        $("#chatsAsBuyerTable").empty();
+        chatsAsOwner.forEach(chat => {
+            console.log(chat.offerId)
+            let numUnreadMessages = contarMensajesSinLeer(chat._id, chat.offerId);
+            $("#chatsAsOwnerTable").append(
+                "<tr id=" + chat._id + ">" +
+                "<td>" + chat.owner + "</td>" +
+                "<td>" + chat.offerTitle + "</td>" +
+                "<td>" + chat.buyer + "</td>" +
+                "<td>" + numUnreadMessages+ "</td>" +
+                '<td><a onClick="showChat(\'' + chat._id.toString() + '\',\'' + chat.offerId + '\')" >Reanudar</a></td>' +
+                "<td><a onClick=deleteChat('" + chat._id + "') >Borrar</a></td>" +
+                "</tr>");
+        });
+        chatsAsBuyer.forEach(chat => {
+            let numUnreadMessages = contarMensajesSinLeer(chat._id, chat.offerId);
+            $("#chatsAsBuyerTable").append(
+                "<tr id=" + chat._id + ">" +
+                "<td>" + chat.owner + "</td>" +
+                "<td>" + chat.offerTitle + "</td>" +
+                "<td>" + chat.buyer + "</td>" +
+                "<td>" + numUnreadMessages + "</td>" +
+                '<td><a onClick="showChat(\'' + chat._id.toString() + '\',\'' + chat.offerId + '\')" >Reanudar</a></td>' +
+                "</tr>");
+        });
+    }
+
+    function showChat(chatId, offerId) {
+        selectedChatId = chatId;
+        selectedOfferId = offerId;
+        $("#main-container").load("widget-chat-detail.html");
+    }
+
+    function contarMensajesSinLeer(chatId, ofertaId) {
+        let contador = 0;
+        $.ajax({
+            url: URLbase + "/messages/" + chatId + "/" + ofertaId,
+            type: "GET",
+            data: {},
+            dataType: 'json',
+            headers: {"token": token},
+            success: function (response) {
+                let messages = response.messages;
+                let user = response.user;
+
+                messages.forEach(mensaje => {
+                    if(mensaje.writer !== user && !mensaje.isRead)
+                        contador++;
+                })
+
+            },
+            error: function (error) {
+
+            }
+        });
+        return contador;
+    }
+
+    function deleteChat(chatId) {
+        $.ajax({
+            url: URLbase + "/chats/" + chatId,
+            type: "DELETE",
+            data: {},
+            dataType: 'json',
+            headers: {"token": token},
+            success: function (response) {
+                loadChats();
+            },
+            error: function (error) {
+                $("#div-error").remove();
+                let c_errors = (typeof error.responseJSON.errors === "undefined") ? null : error.responseJSON.errors;
+                console.log(c_errors);
+                if (c_errors !== null && c_errors.length > 0) {
+                    $("#widget-songs").prepend("<div id='div-error' class='alert alert-danger'><ul id='ul-error'></ul></div>");
+                    for (let err in c_errors) {
+                        $("#ul-error").append("<li>" + c_errors[err].msg + "</li>");
+                    }
+                }
+            }
+
+        });
+    }
+
+    loadChats();
+
+    setInterval(function () {
+        loadChats();
+    }, 5000);
+</script>

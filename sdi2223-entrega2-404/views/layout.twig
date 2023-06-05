@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>{% block title %} My Wallapop {% endblock %}</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  {% block scripts %} {% endblock %}
+</head>
+<body>
+
+<!-- Barra de Navegación superior -->
+<nav class="navbar navbar-inverse">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>                        
+      </button>
+      <img src="/images/user.png" alt="logo"/>
+    </div>
+    <div class="collapse navbar-collapse" id="myNavbar">
+      {% if session.user is not empty %}
+        {% if session.user=="admin@email.com" %}
+          <ul class="nav navbar-nav">
+            <li id="user-list"><a href="/users/list">Ver usuarios</a></li>
+          </ul>
+            <ul class="nav navbar-nav">
+              <li id="log-list"><a href="/logs/list">Ver logs</a></li>
+            </ul>
+        {% else %}
+            <ul class="nav navbar-nav">
+                <li id="offers-shop"><a href="/shop">Comprar</a></li>
+                <li id="offers-featured"><a href="/offers/featured">Ver ofertas destacadas</a></li>
+                <li id="offers-bought"><a href="/offers/bought">Ofertas compradas</a></li>
+                <li id="offers-add"><a href="/offers/add">Añadir ofertas</a></li>
+                <li id="offers-list"><a href="/offers/own">Ver ofertas propias</a></li>
+            </ul>
+        {% endif %}
+      {% endif %}
+      <ul class="nav navbar-nav navbar-right">
+        {% if session.user is not empty %}
+            <li><a>{{ session.user }} {% if session.user!="admin@email.com" %}<div id="money">Saldo - {{ session.money }}€</div>{% endif %}</a></li>
+        <li><a href="/users/logout"><span class="glyphicon glyphicon-log-in"></span> Cerrar sesión</a></li>
+        {% endif %}
+          {% if session.user is empty %}
+              <li><a href="/users/signup"><span class="glyphicon glyphicon-user"></span> Registrate</a></li>
+              <li><a href="/users/login"><span class="glyphicon glyphicon-log-in"></span> Identifícate</a></li>
+          {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+    {% if session.errors %}
+    <div class = 'alert alert-danger'>
+            <ul>
+                {% for error in session.errors %}
+                    <li class = 'alert-danger'>
+                        <div class = 'alert-danger'>{{ error.msg }}</div>
+                    </li>
+                {% endfor %}
+            </ul>
+    </div>
+    {% endif %}
+    <!-- Contenido -->
+    {% block main_container %}
+        <!-- Posible contenido por defecto -->
+    {% endblock %}
+</div>
+
+
+</body>
+</html>

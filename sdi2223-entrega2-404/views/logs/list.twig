@@ -1,0 +1,62 @@
+{% extends "layout.twig" %}
+{% block title %} Logs del sistema {% endblock %}
+{% block main_container %}
+<h2>Logs del sistema</h2>
+<fieldset>
+		<legend>Elige un filtro:</legend>
+		<label class="radio-inline">
+			<input id="all" type="radio" value="ALL" name="filter" {%if radio.all %}checked{%endif%}>Todos</input>
+		</label>
+		<label class="radio-inline">
+			<input id="pet" type="radio" value="PET" name="filter" {%if radio.pet %}checked{%endif%}>PET</input>
+		</label>
+		<label class="radio-inline">
+			<input id="alta" type="radio" value="ALTA" name="filter" {%if radio.alta %}checked{%endif%}>ALTA</input>
+		</label>
+		<label class="radio-inline">
+			<input id="login-ex" type="radio" value="LOGIN-EX" name="filter" {%if radio.ex %}checked{%endif%}>LOGIN-EX</input>
+		</label>
+		<label class="radio-inline">
+			<input id="login-err" type="radio" value="LOGIN-ERR" name="filter" {%if radio.err %}checked{%endif%}>LOGIN-ERR</input>
+		</label>
+		<label class="radio-inline">
+			<input id="logout" type="radio" value="LOGOUT" name="filter" {%if radio.logout %}checked{%endif%}>LOGOUT</input>
+		</label>
+		<button type="button" id="deleteButton" class="btn btn-primary">Eliminar</button>
+</fieldset>
+<script>
+
+		$('input[name="filter"]').on('change', function () {
+			var type = this.value;
+			$("body").load('/logs/filter/' + type);
+		});
+
+
+
+		$("#deleteButton").click(function () {
+			var type = document.querySelector('input[name="filter"]:checked').value
+			$("body").load('/logs/delete/' + type);
+		});
+</script>
+<div class="table-responsive">
+	<table class="table table-hover">
+		<thead>
+		<tr>
+			<th>Tipo</th>
+			<th>Fecha</th>
+			<th>Descripción</th>
+
+		</tr>
+		</thead>
+		<tbody>
+		{% for log in logs %}
+			<tr>
+				<td>{{ log.type }}</td>
+				<td>{{ log.date }}</td>
+				<td>{{ log.description }}</td>
+			</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+</div>
+{% endblock %}

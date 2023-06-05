@@ -1,0 +1,63 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Identificación de usuario</title>
+</head>
+<body>
+<div id="widget-login">
+  <div class="form-group">
+    <label class="control-label col-sm-2" for="email">Email:</label>
+    <div class="col-sm-10">
+      <input type="text" class="form-control" name="email"
+             placeholder="email@email.com" id="email" />
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="control-label col-sm-2" for="password">Password:</label>
+    <div class="col-sm-10">
+      <input type="password" class="form-control" name="password"
+             placeholder="contraseña" id="password"/>
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="col-sm-offset-2 col-sm-10">
+      <button type="button" id="boton-login">Aceptar</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
+<script>
+  window.history.pushState("", "", "/apiclient/client.html?w=login");
+  $("#boton-login").click(function () {
+    $.ajax({
+      url: URLbase + "/users/login",
+      type: "POST",
+      data: {
+        email: $("#email").val(),
+        password: $("#password").val()
+      },
+      dataType: "json",
+      success: function (response) {
+        token = response.token;
+        Cookies.set('token', response.token);
+        console.log('hola')
+        $("#main-container").load("widget-offers.html");
+      },
+      error: function (response) {
+        $("#div-errors").remove();
+        let errors=(typeof response.responseJSON.errors=="undefined")?null:response.responseJSON.errors;
+        console.log(errors)
+        if(errors!==null &&errors.length>0){
+          $("#widget-login").prepend("<div id='div-errors' class='alert alert-danger'> <ul id='ul-errors'></ul></div>")
+          for(let i =0;i<errors.length;i++){
+            $("#ul-errors").append("<li>"+errors[i].msg+"</li>")
+          }
+        }else{
+          $("#widget-login").prepend("<div id='div-errors' class='alert alert-danger'> Se ha producido un error inesperado</div>")
+
+        }
+      }
+    });
+  });
+</script>

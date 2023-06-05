@@ -1,0 +1,141 @@
+<div id="widget-chat-detail">
+  <h1>Chat</h1>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead>
+      <tr>
+        <th>Autor</th>
+        <th>Fecha</th>
+        <th>Texto</th>
+        <th>Leido</th>
+      </tr>
+      </thead>
+      <tbody id="chatMessagesBody"></tbody>
+    </table>
+  </div>
+  <div class="form-group">
+    <label class="control-label col-sm-2" for="content">Mensaje:</label>
+    <div class="col-sm-10">
+      <input id="content" type="text" class="form-control" name="content"
+             placeholder="Escribe un mensaje" />
+    </div>
+  </div>
+  <div class="form-group">
+    <div class="col-sm-offset-2 col-sm-10">
+      <button id="button-send" type="submit" class="btn btn-primary" onClick="sendMessage()">Enviar</button>
+    </div>
+  </div>
+</div>
+<script>
+  window.history.pushState("", "", "/apiclient/client.html?w=chat");
+  var selectedChatId;
+  var selectedOfferId;
+  var messages;
+  let user;
+
+  function loadMessages() {
+    $.ajax({
+      url: URLbase + "/messages/" + selectedChatId + "/" + selectedOfferId,
+      type: "GET",
+      data: {},
+      dataType: 'json',
+      headers: {"token": token},
+      success: function (response) {
+        messages = response.messages;
+        user = response.user;
+        markAsRead(messages);
+        updateMessagesTable(messages);
+      },
+      error: function (error) {
+        $("#main-container").load("widget-login.html");
+      }
+    });
+  }
+  function updateMessagesTable(messages) {
+    $("#chatMessagesBody").empty(); // Vaciar la tabla
+    for (let i = 0; i < messages.length; i++) {
+      let leido = (messages[i].isRead) ? "Leido" : "No leido";
+      $("#chatMessagesBody").append(
+              "<tr id=" + messages[i]._id + ">" +
+              "<td>" + messages[i].writer + "</td>" +
+              "<td>" + messages[i].date + "</td>" +
+              "<td>" + messages[i].content + "</td>" +
+              "<td>" + leido + "</td>" +
+              "</tr>");
+    }
+  }
+
+  function markAsRead(messages){
+
+    let messagesToBeMarked = messages.filter(message => {
+      return message.writer !== user && !message.isRead
+    });
+
+    messagesToBeMarked.forEach(message => {
+      console.log("Marcando mensaje: " + message.content)
+      $.ajax({
+        url: URLbase + "/messages",
+        type: "PUT",
+        data: {
+          id: message._id
+        },
+        dataType: 'json',
+        headers: {"token": token},
+        success: function (response) {
+        },
+        error: function (response) {
+          $("#div-errors").remove();
+          let errors=(typeof response.responseJSON.errors=="undefined")?null:response.responseJSON.errors;
+          console.log(errors)
+          if(errors!==null &&errors.length>0){
+            $("#widget-chat-detail").prepend("<div id='div-errors' class='alert alert-danger'> <ul id='ul-errors'></ul></div>")
+            for(let i =0;i<errors.length;i++){
+              $("#ul-errors").append("<li>"+errors[i].msg+"</li>")
+            }
+          }else{
+            $("#widget-chat-detail").prepend("<div id='div-errors' class='alert alert-danger'> Se ha producido un error inesperado</div>")
+          }
+        }
+      });
+    })
+  }
+
+  function sendMessage() {
+    $.ajax({
+      url: URLbase + "/messages",
+      type: "POST",
+      data: {
+        chatId: selectedChatId,
+        offerId: selectedOfferId,
+        content: $("#content").val()
+      },
+      dataType: 'json',
+      headers: {"token": token},
+      success: function (response) {
+        $("#div-errors").remove();
+        selectedChatId = response.chatId
+        loadMessages()
+      },
+      error: function (response) {
+        $("#div-errors").remove();
+        let errors=(typeof response.responseJSON.errors=="undefined")?null:response.responseJSON.errors;
+        console.log(errors)
+        if(errors!==null &&errors.length>0){
+          $("#widget-chat-detail").prepend("<div id='div-errors' class='alert alert-danger'> <ul id='ul-errors'></ul></div>")
+          for(let i =0;i<errors.length;i++){
+            $("#ul-errors").append("<li>"+errors[i].msg+"</li>")
+          }
+        }else{
+          $("#widget-chat-detail").prepend("<div id='div-errors' class='alert alert-danger'> Se ha producido un error inesperado</div>")
+        }
+        //$("#main-container").load("widget-login.html");
+      }
+    });
+  }
+
+  loadMessages();
+
+  setInterval(function () {
+    loadMessages();
+  }, 5000);
+</script>

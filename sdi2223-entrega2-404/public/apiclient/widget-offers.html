@@ -1,0 +1,78 @@
+<div id="widget-offers">
+    <table class="table table-hover">
+        <thead>
+        <tr>
+            <th>Titulo</th>
+            <th>Descripcion</th>
+            <th>Precio (€)</th>
+            <th>Fecha de publicacion</th>
+            <th>Vendedor</th>
+        </tr>
+        </thead>
+        <tbody id="offersTable"></tbody>
+    </table>
+</div>
+
+<style>
+    td {
+        text-align: left;
+    }
+</style>
+
+<script>
+    window.history.pushState("", "", "/apiclient/client.html?w=offers");
+
+    let offers;
+
+    function loadOffers() {
+        $.ajax({
+            url: URLbase + "/offers",
+            type: "GET",
+            data: {},
+            dataType: 'json',
+            headers: {"token": token},
+            success: function (response) {
+                offers = response.offers;
+                updateOffersTable();
+            },
+            error: function (error) {
+                $("#main-container").load("widget-login.html");
+            }
+        });
+    }
+
+    function updateOffersTable() {
+        $("#offersTable").empty(); // Vaciar la tabla
+        offers.forEach(offer => {
+            $("#offersTable").append(
+                "<tr id=" + offer._id + ">" +
+                "<td>" + offer.title + "</td>" +
+                "<td>" + offer.details + "</td>" +
+                "<td>" + offer.price + "</td>" +
+                "<td>" + offer.publicationDate + "</td>" +
+                "<td>" + offer.owner + "</td>" +
+                '<td><a onClick=\"showChat(\'' + offer._id + '\')">Conversacion</a></td>' +
+                "</tr>");
+        });
+    }
+
+    function showChat(offerId) {
+        $.ajax({
+            url: URLbase + "/chats/" + offerId,
+            type: "GET",
+            dataType: 'json',
+            headers: {"token": token},
+            success: function (response) {
+                selectedOfferId = offerId
+                selectedChatId = response.chatId
+                $("#main-container").load("widget-chat-detail.html");
+            }
+        });
+    }
+
+    loadOffers();
+
+    setInterval(function () {
+        loadOffers();
+    }, 5000);
+</script>
